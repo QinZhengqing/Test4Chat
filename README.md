@@ -16,7 +16,8 @@
 - **cache_control 分析**：黄色高亮统计有多少处带 `cache_control` 标记
   （覆盖 messages 内容块与 Anthropic 顶层 `system` 块），
   并检测正文里是否残留 `<Cache_control>` 原始标签（剥离失败的信号）；
-- **日志落盘**：每次请求按天追加到 `logs/requests-YYYY-MM-DD.jsonl`，便于事后 diff；
+- **日志落盘**：每次请求落盘为独立 JSON 文件（缩进展开，便于直接阅读），
+  文件名形如 `2026-06-13_11-08-27-342_anthropic_0.json`；
 - **配置校验 + 热重载**：启动时校验 `config.yml`；运行中改配置（API Key / 回复
   文本 / 假模型名等）自动生效（`host`/`port` 变更需重启）；
 - **假响应**：流式 / 非流式都返回一条固定回复，酒馆侧不报错。
