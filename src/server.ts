@@ -39,8 +39,8 @@ async function handle(req: IncomingMessage, res: ServerResponse, cfg: Config): P
   if (method === 'POST' && url.includes('/chat/completions')) {
     if (!authorized(req, cfg)) return unauthorized(res);
     const { body, raw } = await readJson(req);
-    const analysis = printRequest(cfg, { method, url, body, raw });
-    logRequest(cfg, { ts: new Date().toISOString(), api: 'openai', url, analysis, body });
+    printRequest(cfg, { method, url, body, raw });
+    logRequest(cfg, { headers: req.headers, body });
 
     if (body?.stream) return streamReplyOpenAI(res, cfg);
     return jsonReplyOpenAI(res, cfg);
@@ -50,8 +50,8 @@ async function handle(req: IncomingMessage, res: ServerResponse, cfg: Config): P
   if (method === 'POST' && url.includes('/messages')) {
     if (!authorized(req, cfg)) return unauthorized(res, 'anthropic');
     const { body, raw } = await readJson(req);
-    const analysis = printRequest(cfg, { method, url, body, raw });
-    logRequest(cfg, { ts: new Date().toISOString(), api: 'anthropic', url, analysis, body });
+    printRequest(cfg, { method, url, body, raw });
+    logRequest(cfg, { headers: req.headers, body });
 
     if (body?.stream) return streamReplyAnthropic(res, cfg);
     return jsonReplyAnthropic(res, cfg);

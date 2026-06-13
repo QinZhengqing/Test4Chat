@@ -17,17 +17,16 @@ function stamp(d: Date): string {
 
 /**
  * 把单次请求落盘为**独立的一个文件**，内容为缩进展开的 JSON（便于直接阅读）。
- * 文件名形如：2026-06-13_11-08-27-342_anthropic_0.json
+ * 文件名形如：2026-06-13_11-08-27-342_0.json
  * 失败仅告警，不影响主流程。
  */
-export function logRequest(cfg: Config, record: { api?: string; [k: string]: unknown }): void {
+export function logRequest(cfg: Config, record: unknown): void {
   if (!cfg.logToFile) return;
   try {
     const dir = isAbsolute(cfg.logDir) ? cfg.logDir : join(baseDir(), cfg.logDir);
     if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
 
-    const api = String(record.api ?? 'req');
-    const name = `${stamp(new Date())}_${api}_${seq++}.json`;
+    const name = `${stamp(new Date())}_${seq++}.json`;
     writeFileSync(join(dir, name), JSON.stringify(record, null, 2), 'utf8');
   } catch (err) {
     console.error(`[logger] 写日志失败: ${(err as Error).message}`);
