@@ -1,0 +1,22 @@
+# config.yml - Test4Chat 请求打印服务器配置
+#
+# 本文件在 server 启动时读取。打包成 exe 后，首次运行会把这份默认配置
+# 释放到 exe 同目录的 config.yml，之后改 config.yml、重启即可生效（或开启
+# hot_reload 实时生效）。
+
+# ---- 监听设置 ---- #
+host: 0.0.0.0 # 监听地址（仅本机访问填 127.0.0.1，局域网访问填 0.0.0.0）
+port: 8052 # 监听端口（避开 Windows netsh excludedportrange 保留区间）
+
+# ---- 鉴权设置 ---- #
+api_key: '' # 下游（酒馆 Custom 源）需填写的 API Key；留空则不校验
+
+# ---- 响应设置 ---- #
+reply_text: '[Test4Chat] 请求已捕获并打印到控制台。' # 假响应的固定回复文本
+model_id: Claude-Test # /v1/models 列表返回的假模型名
+
+# ---- 行为设置 ---- #
+hot_reload: true # 监听本文件变化并自动重载配置（端口/host 变化需重启才生效）
+log_to_file: true # 是否把每次请求体落盘到 log_dir
+log_dir: logs # 日志目录（相对 exe / 项目目录）
+pretty_body: true # 控制台是否缩进美化打印请求体 JSON

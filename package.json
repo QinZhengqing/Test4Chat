@@ -1,0 +1,28 @@
+{
+  "name": "test4chat",
+  "version": "1.0.0",
+  "description": "伪装成 OpenAI 兼容端点的请求打印服务器，用于验证 Cache4Chat 等脚本对请求体的修改是否生效。",
+  "license": "MIT",
+  "bin": "dist/index.js",
+  "scripts": {
+    "clean": "rimraf dist build",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsc && node dist/index.js",
+    "package": "npm run build && pkg . --output build/Test4Chat.exe"
+  },
+  "pkg": {
+    "targets": ["node22-win-x64"],
+    "outputPath": "build",
+    "assets": ["config.default.yml"]
+  },
+  "dependencies": {
+    "yaml": "^2.6.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@yao-pkg/pkg": "^6.3.0",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.7.2"
+  }
+}
