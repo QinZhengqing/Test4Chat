@@ -9,8 +9,12 @@
 
 ## 功能
 
-- **请求打印**：完整、可缩进美化地打印每次 `/chat/completions` 请求体；
-- **cache_control 分析**：黄色高亮统计有多少条消息带 `cache_control` 标记，
+- **双端点**：同时支持 OpenAI 风格 `/v1/chat/completions`（Bearer 鉴权）
+  与 Anthropic 风格 `/v1/messages`（`x-api-key` 鉴权），流式 / 非流式各自
+  按对应协议返回，酒馆 OpenAI 源或 Claude 源都能连；
+- **请求打印**：完整、可缩进美化地打印每次请求体；
+- **cache_control 分析**：黄色高亮统计有多少处带 `cache_control` 标记
+  （覆盖 messages 内容块与 Anthropic 顶层 `system` 块），
   并检测正文里是否残留 `<Cache_control>` 原始标签（剥离失败的信号）；
 - **日志落盘**：每次请求按天追加到 `logs/requests-YYYY-MM-DD.jsonl`，便于事后 diff；
 - **配置校验 + 热重载**：启动时校验 `config.yml`；运行中改配置（API Key / 回复
@@ -60,12 +64,21 @@ npm run package  # tsc 编译后用 @yao-pkg/pkg 产出 build/Test4Chat.exe
 
 ## 酒馆配置
 
-1. API 选择 **Chat Completion** → 来源选 **Custom (OpenAI-compatible)**；
-2. 端点 URL 填 `http://127.0.0.1:8052/v1`（端口同 `config.yml`）；
-3. API Key 填 `config.yml` 中的 `api_key`（默认**留空 = 不校验**，可不填；
-   若设置了非空 Key，不匹配或未携带会返回 401）；
-4. 点击"连接"，会列出假模型（默认 `Claude-Test`）；
-5. 发送任意消息，控制台即打印完整请求体。
+两种源都支持，按你要验证的协议选其一：
+
+- **OpenAI 源**：来源选 **Custom (OpenAI-compatible)**，端点 URL 填
+  `http://127.0.0.1:8052/v1`，走 `/v1/chat/completions`；
+- **Claude 源**：来源选 **Claude**，反代地址填 `http://127.0.0.1:8052`，
+  走 `/v1/messages`（这是 `cache_control` 的原生场景）。
+
+通用：
+
+1. 端口同 `config.yml`（默认 8052）；
+2. API Key 填 `config.yml` 中的 `api_key`（默认**留空 = 不校验**，可不填；
+   若设置了非空 Key，OpenAI 源用 `Authorization: Bearer`、Claude 源用
+   `x-api-key`，不匹配或未携带会返回 401）；
+3. 连接后会列出假模型（默认 `Claude-Test`）；
+4. 发送任意消息，控制台即打印完整请求体。
 
 ## 验证 Cache4Chat 的步骤
 

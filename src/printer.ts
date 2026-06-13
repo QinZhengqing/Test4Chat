@@ -2,46 +2,62 @@ import { color } from './colors';
 import type { Config } from './config';
 
 export interface CacheAnalysis {
-  /** 带 cache_control 标记的消息条数 */
+  /** 带 cache_control 标记的位置数 */
   markedMessages: number;
-  /** 命中的 cache_control 位置摘要（消息下标 + type） */
-  hits: Array<{ index: number; type: string }>;
+  /** 命中的 cache_control 位置摘要（位置标签 + type） */
+  hits: Array<{ label: string; type: string }>;
   /** 请求正文里是否仍残留 <Cache_control> 字样（剥离失败的信号） */
   leftoverTag: boolean;
 }
 
 const TAG_RE = /<\s*cache_control\b/i;
 
+/** 扫描单个 content 字段（字符串或内容块数组），收集 cache_control 命中与残留标签。 */
+function scanContent(
+  content: unknown,
+  label: string,
+  result: CacheAnalysis,
+): boolean {
+  let marked = false;
+  if (Array.isArray(content)) {
+    for (const part of content as any[]) {
+      if (part && typeof part === 'object' && part.cache_control) {
+        marked = true;
+        result.hits.push({ label, type: String(part.cache_control.type ?? '?') });
+      }
+      if (typeof part?.text === 'string' && TAG_RE.test(part.text)) {
+        result.leftoverTag = true;
+      }
+    }
+  } else if (typeof content === 'string' && TAG_RE.test(content)) {
+    result.leftoverTag = true;
+  }
+  return marked;
+}
+
 /**
- * 扫描 OpenAI/Anthropic 风格的消息数组，统计 cache_control 注入情况，
+ * 扫描 OpenAI / Anthropic 风格请求体，统计 cache_control 注入情况，
  * 并检测正文里是否还残留 <Cache_control> 原始标签。
+ * 同时覆盖 Anthropic 的顶层 system 块。
  */
 export function analyzeCache(body: any): CacheAnalysis {
   const result: CacheAnalysis = { markedMessages: 0, hits: [], leftoverTag: false };
-  const messages = Array.isArray(body?.messages) ? body.messages : [];
 
+  // Anthropic 顶层 system（可为字符串或内容块数组）
+  if (body?.system !== undefined) {
+    if (scanContent(body.system, 'system', result)) result.markedMessages += 1;
+  }
+
+  const messages = Array.isArray(body?.messages) ? body.messages : [];
   messages.forEach((msg: any, index: number) => {
     let marked = false;
-
+    // 消息级 cache_control（OpenAI 兼容写法常见）
     if (msg && typeof msg === 'object' && msg.cache_control) {
       marked = true;
-      result.hits.push({ index, type: String(msg.cache_control.type ?? '?') });
+      result.hits.push({ label: `msg#${index}`, type: String(msg.cache_control.type ?? '?') });
     }
-    // content 可能是字符串，或 [{type:'text', text, cache_control}] 数组
-    if (Array.isArray(msg?.content)) {
-      for (const part of msg.content) {
-        if (part && typeof part === 'object' && part.cache_control) {
-          marked = true;
-          result.hits.push({ index, type: String(part.cache_control.type ?? '?') });
-        }
-        if (typeof part?.text === 'string' && TAG_RE.test(part.text)) {
-          result.leftoverTag = true;
-        }
-      }
-    } else if (typeof msg?.content === 'string' && TAG_RE.test(msg.content)) {
-      result.leftoverTag = true;
-    }
-
+    // content 内容块级
+    if (scanContent(msg?.content, `msg#${index}`, result)) marked = true;
     if (marked) result.markedMessages += 1;
   });
 
@@ -64,6 +80,7 @@ export function printRequest(cfg: Config, info: {
   );
 
   if (info.body?.model) console.log(`  model : ${color.magenta(String(info.body.model))}`);
+  if (info.body?.system !== undefined) console.log(`  system: ${color.dim('有')}`);
   if (Array.isArray(info.body?.messages)) {
     console.log(`  msgs  : ${info.body.messages.length}`);
   }
@@ -73,11 +90,9 @@ export function printRequest(cfg: Config, info: {
 
   // cache_control 高亮摘要
   if (analysis.markedMessages > 0) {
-    const summary = analysis.hits
-      .map((h) => `#${h.index}:${h.type}`)
-      .join(', ');
+    const summary = analysis.hits.map((h) => `${h.label}:${h.type}`).join(', ');
     console.log(
-      `  ${color.hi(` cache_control × ${analysis.markedMessages} `)} ${color.yellow(summary)}`,
+      `  ${color.hi(` cache_control × ${analysis.hits.length} `)} ${color.yellow(summary)}`,
     );
   } else {
     console.log(`  ${color.dim('cache_control: 无')}`);
