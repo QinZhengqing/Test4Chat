@@ -1,7 +1,6 @@
 # Test4Chat
 
-假 API 端点。把 SillyTavern 发过来的请求原封不动打印出来，专门用来验证
-Cache4Chat 之类脚本到底有没有正确改写请求体。
+假 API 端点。把客户端请求原封不动打印出来，专门用来验证客户端的实际请求内容。
 
 支持 OpenAI (`/v1/chat/completions`) 和 Anthropic (`/v1/messages`) 两种协议。
 打包成单文件 exe，双击即用，关窗即停。
@@ -9,7 +8,7 @@ Cache4Chat 之类脚本到底有没有正确改写请求体。
 ## 快速开始
 
 ```text
-双击 Test4Chat.exe → 首次自动生成 config.yml → 酒馆连上就能用
+双击 Test4Chat.exe → 首次自动生成 config.yml → 客户端配置好API-url和Model → 连接并发送测试消息
 ```
 
 酒馆端配置：
@@ -26,10 +25,10 @@ API Key 默认留空不校验，直接连。
 1. 控制台彩色打印每次请求的摘要（model、消息数、stream 等）
 2. `cache_control` 黄色高亮：统计有几处注入、各在什么位置
 3. 检测正文残留的 `<Cache_control>` 标签 → 红色告警（说明剥离失败）
-4. 每次请求落盘为独立 JSON（原始 headers + body），文件名如 `2026-06-13_11-08-27-342_0.json`
-5. 返回一条固定假回复，酒馆不报错
+4. 每次请求打印为独立 JSON（原始 headers + body），文件名如 `2026-06-13_11-08-27-342_0.json`
+5. 返回一条固定假回复
 
-## 验证 Cache4Chat
+## 协同：验证 Cache4Chat
 
 1. 酒馆连上本服务，启用 Cache4Chat 脚本
 2. 预设里写 `<Cache_control>type: ephemeral</Cache_control>`，发送消息
